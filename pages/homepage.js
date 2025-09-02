@@ -43,7 +43,7 @@ export default function Homepage({ songs, onSongPlay, searchQuery,setSearchQuery
         >
           
           <p className="text-[3.5rem] font-bold text-amber-50 mb-8 max-w-2xl animate-fadeIn">
-            The world's Finest Music Streaming Platform
+            The world&apos;s Finest Music Streaming Platform
           </p>
 
           

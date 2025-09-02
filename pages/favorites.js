@@ -5,7 +5,7 @@ import Sidebar from "../components/Sidebar";
 import BottomPlayerBar from "../components/BottomPlayerBar";
 import { FaHeart } from "react-icons/fa";
 import Liked from "./components/Liked";
-import { supabase } from "../lib/supabase";
+import { fetchFavorites } from "../lib/music-api";
 
 export default function FavoritesPage() {
   const [songs, setSongs] = useState([]);
@@ -13,44 +13,39 @@ export default function FavoritesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ✅ Fetch all liked songs
-  const fetchFavorites = async () => {
+  // ✅ Fetch all liked songs using music-api function
+  const fetchFavoritesData = async () => {
     setLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("You must be logged in");
-
-      const res = await fetch("/api/favorites", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${session.access_token}`, // 👈 required for auth
-        },
-      });
-
-      if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`);
-      const data = await res.json();
+      const data = await fetchFavorites();
       setSongs(data);
+      setError(null);
     } catch (err) {
       console.error("Error fetching favorites:", err);
-      setError("Failed to load favorites. Make sure you are logged in.");
+      if (err.message.includes('Authentication required')) {
+        setError("Please log in to view your favorites.");
+        setSongs([]);
+      } else {
+        setError("Failed to load favorites. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchFavorites();
+    fetchFavoritesData();
   }, []);
 
-const handleSongPlay = (song) => {
-  const index = songs.findIndex(s => s.id === song.id);
-  if (index !== -1) setCurrentIndex(index);
-};
-  // Refresh favorites when a song is liked/unliked
+  const handleSongPlay = (song) => {
+    const index = songs.findIndex(s => s.id === song.id);
+    if (index !== -1) setCurrentIndex(index);
+  };
 
-const handleLikeChange = () => {
-  fetchFavorites(); // re-fetch favorites list
-};
+  // Refresh favorites when a song is liked/unliked
+  const handleLikeChange = () => {
+    fetchFavoritesData(); // re-fetch favorites list
+  };
 
 
   return (
@@ -71,9 +66,15 @@ const handleLikeChange = () => {
           </div>
 
           {loading ? (
-            <p className="text-[#F4F5FC]">Loading favorites...</p>
+            <div className="flex justify-center items-center h-32">
+              <div className="text-[#8EBBFF] text-lg">Loading favorites...</div>
+            </div>
           ) : error ? (
-            <p className="text-red-500">{error}</p>
+            <div className="text-center py-16">
+              <FaHeart className="text-6xl text-gray-400 mx-auto mb-4" />
+              <p className="text-xl text-[#F4F5FC] mb-2">{error}</p>
+              <p className="text-[#8EBBFF]">Please log in to view your favorites</p>
+            </div>
           ) : songs.length === 0 ? (
             <div className="text-center py-16">
               <FaHeart className="text-6xl text-gray-400 mx-auto mb-4" />
